@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Latest Notifications</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 40px;
+      background: #f9f9f9;
+    }
+    .container {
+      background: white;
+      padding: 20px 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      max-width: 600px;
+      margin: auto;
+    }
+    h2 {
+      font-size: 22px;
+      margin-bottom: 15px;
+      border-bottom: 2px solid #eee;
+      padding-bottom: 8px;
+      color: #333;
+    }
+    ul {
+      list-style-type: disc;
+      padding-left: 20px;
+    }
+    li {
+      margin: 6px 0;
+    }
+    .footer {
+      margin-top: 15px;
+      font-size: 13px;
+      color: gray;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Latest Notifications</h2>
+    <ul id="notifications"></ul>
+    <div class="footer">Last updated: <span id="lastUpdated"></span></div>
+  </div>
+
+  <script>
+    const SHEET_ID = "1ZkFBPDgL3Gvki4TpRXlu5rMDUlrkeYjAyQXpnKq1TdA"; // 👈 paste only the sheet ID here
+    const SHEET_GID = "ab";            // 👈 change if your sheet is not the first tab
+    const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQo44BSVVhk8pwIb30VS9c5BuYwCxFOPzACsO5KsJqGGa9AEHGCq5wEk0vvujdM-ksu3ajTQwahp9Jh/pub?output=csv";
+
+    async function loadNotifications() {
+      try {
+        // always fetch fresh copy
+        const response = await fetch(CSV_URL + "&nocache=" + Date.now(), {
+          cache: "no-store"
+        });
+        const text = await response.text();
+
+        const rows = text.split("\n").map(r => r.trim()).filter(r => r);
+        const list = document.getElementById("notifications");
+        list.innerHTML = ""; // clear old list
+
+        // skip header, clean empty/deleted rows, reverse for newest first
+        rows.slice(1).reverse().forEach(r => {
+          const cols = r.split(",");
+          const firstCol = cols[0].replace(/"/g, "").trim();
+
+          if (firstCol && firstCol.toLowerCase() !== "undefined") {
+            const li = document.createElement("li");
+            li.textContent = firstCol;
+            list.appendChild(li);
+          }
+        });
+
+        document.getElementById("lastUpdated").textContent =
+          new Date().toLocaleTimeString();
+      } catch (err) {
+        console.error("Error loading sheet:", err);
+      }
+    }
+
+    // first load
+    loadNotifications();
+
+    // auto refresh every 30s
+    setInterval(loadNotifications, 7000);
+  </script>
+</body>
+</html>
